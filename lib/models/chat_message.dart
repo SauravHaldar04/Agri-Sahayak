@@ -6,6 +6,15 @@ enum ChatComponentType {
   diagnosisCard,
   policyCard,
   communityPrompt,
+  weatherCard,
+  cropReportCard,
+  timeSeriesChartCard,
+  comparisonTableCard,
+  soilAnalysisCard,
+  visualDiagnosisCard,
+  stepByStepGuideCard,
+  interactiveChecklistCard,
+  contactAdvisorCard,
 }
 
 class ChatMessage {
@@ -15,6 +24,8 @@ class ChatMessage {
   final ChatComponentType componentType;
   final Map<String, dynamic>? componentData;
   final bool isTyping;
+  final String? markdown;
+  final Map<String, dynamic>? jsonResponse;
 
   const ChatMessage({
     required this.id,
@@ -23,5 +34,7 @@ class ChatMessage {
     this.componentType = ChatComponentType.none,
     this.componentData,
     this.isTyping = false,
+    this.markdown,
+    this.jsonResponse,
   });
 }

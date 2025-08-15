@@ -12,25 +12,29 @@ class ChatUsageExample {
 
   /// Example of sending different types of messages
   static Future<void> sendExampleMessages() async {
-    // Price-related query (will show chart component)
+    // Price-related query (will show chart component with markdown response)
     await ChatService.instance.sendMessage(
-      "What's the current price of wheat?",
+      "What's the current price of wheat and what factors affect it?",
     );
 
-    // Policy-related query (will show policy card)
-    await ChatService.instance.sendMessage("Tell me about PM-KISAN benefits");
-
-    // Disease-related query (will show diagnosis card)
+    // Policy-related query (will show policy card with markdown response)
     await ChatService.instance.sendMessage(
-      "My tomato plants have yellow leaves, what's wrong?",
+      "Tell me about PM-KISAN benefits and eligibility criteria",
     );
 
-    // Help-related query (will show community prompt)
-    await ChatService.instance.sendMessage("How do I improve soil fertility?");
-
-    // General query (will show regular response)
+    // Disease-related query (will show diagnosis card with markdown response)
     await ChatService.instance.sendMessage(
-      "What crops are best for monsoon season?",
+      "My tomato plants have yellow leaves, what diseases could this be and how do I treat them?",
+    );
+
+    // Help-related query (will show community prompt with markdown response)
+    await ChatService.instance.sendMessage(
+      "How do I improve soil fertility naturally? Give me step-by-step instructions",
+    );
+
+    // General query (will show regular markdown response)
+    await ChatService.instance.sendMessage(
+      "What crops are best for monsoon season? Include planting tips and care instructions",
     );
   }
 
@@ -58,6 +62,33 @@ class ChatUsageExample {
           break;
         case ChatComponentType.communityPrompt:
           print('Message includes community prompt');
+          break;
+        case ChatComponentType.weatherCard:
+          print('Message includes weather card');
+          break;
+        case ChatComponentType.cropReportCard:
+          print('Message includes crop report card');
+          break;
+        case ChatComponentType.timeSeriesChartCard:
+          print('Message includes time series chart');
+          break;
+        case ChatComponentType.comparisonTableCard:
+          print('Message includes comparison table');
+          break;
+        case ChatComponentType.soilAnalysisCard:
+          print('Message includes soil analysis card');
+          break;
+        case ChatComponentType.visualDiagnosisCard:
+          print('Message includes visual diagnosis card');
+          break;
+        case ChatComponentType.stepByStepGuideCard:
+          print('Message includes step-by-step guide');
+          break;
+        case ChatComponentType.interactiveChecklistCard:
+          print('Message includes interactive checklist');
+          break;
+        case ChatComponentType.contactAdvisorCard:
+          print('Message includes contact advisor card');
           break;
         case ChatComponentType.none:
           print('Regular text message');
