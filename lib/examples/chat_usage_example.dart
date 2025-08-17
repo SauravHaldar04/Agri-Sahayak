@@ -54,11 +54,11 @@ class ChatUsageExample {
         case ChatComponentType.chart:
           print('Message includes chart component');
           break;
-        case ChatComponentType.policyCard:
-          print('Message includes policy card');
-          break;
         case ChatComponentType.diagnosisCard:
           print('Message includes diagnosis card');
+          break;
+        case ChatComponentType.policyCard:
+          print('Message includes policy card');
           break;
         case ChatComponentType.communityPrompt:
           print('Message includes community prompt');
@@ -66,8 +66,17 @@ class ChatUsageExample {
         case ChatComponentType.weatherCard:
           print('Message includes weather card');
           break;
+        case ChatComponentType.soilAnalysisCard:
+          print('Message includes soil analysis card');
+          break;
         case ChatComponentType.cropReportCard:
           print('Message includes crop report card');
+          break;
+        case ChatComponentType.visualDiagnosisCard:
+          print('Message includes visual diagnosis card');
+          break;
+        case ChatComponentType.contactAdvisorCard:
+          print('Message includes contact advisor card');
           break;
         case ChatComponentType.timeSeriesChartCard:
           print('Message includes time series chart');
@@ -75,20 +84,14 @@ class ChatUsageExample {
         case ChatComponentType.comparisonTableCard:
           print('Message includes comparison table');
           break;
-        case ChatComponentType.soilAnalysisCard:
-          print('Message includes soil analysis card');
-          break;
-        case ChatComponentType.visualDiagnosisCard:
-          print('Message includes visual diagnosis card');
-          break;
         case ChatComponentType.stepByStepGuideCard:
           print('Message includes step-by-step guide');
           break;
         case ChatComponentType.interactiveChecklistCard:
           print('Message includes interactive checklist');
           break;
-        case ChatComponentType.contactAdvisorCard:
-          print('Message includes contact advisor card');
+        case ChatComponentType.pdfPreviewCard:
+          print('Message includes PDF preview card');
           break;
         case ChatComponentType.none:
           print('Regular text message');

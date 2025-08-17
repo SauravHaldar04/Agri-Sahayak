@@ -12,10 +12,7 @@ class ComponentPreviewApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Agri Sahayak - Component Preview',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
       home: const ComponentPreviewScreen(),
     );
   }

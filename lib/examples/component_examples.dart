@@ -71,6 +71,7 @@ class ComponentExamples {
   "componentType": "stepByStepGuideCard",
   "componentData": {
     "title": "How to Apply for Seed Subsidy",
+    "description": "Complete guide to apply for government seed subsidy through your local KVK",
     "steps": [
       "Visit your nearest Krishi Vigyan Kendra (KVK)",
       "Submit your land ownership documents",
@@ -79,7 +80,10 @@ class ComponentExamples {
       "Submit to the agriculture officer",
       "Wait for verification and approval (7-10 days)",
       "Receive subsidy voucher or direct credit"
-    ]
+    ],
+    "estimatedTime": "2-3 hours",
+    "materials": ["Land documents", "Aadhaar card", "Application form", "Passport photos"],
+    "tips": "Apply early in the season and ensure all documents are properly attested"
   },
   "text": "Here's a step-by-step guide to apply for seed subsidy through your local KVK.",
   "markdown": "**Seed Subsidy Application Guide**\n\nFollow these steps to apply for seed subsidy:\n\n1. Visit your nearest Krishi Vigyan Kendra (KVK)\n2. Submit your land ownership documents\n3. Fill out the subsidy application form\n4. Attach required documents (Aadhaar, land records)\n5. Submit to the agriculture officer\n6. Wait for verification and approval (7-10 days)\n7. Receive subsidy voucher or direct credit"
@@ -129,6 +133,24 @@ class ComponentExamples {
   "componentData": null,
   "text": "Crop rotation is an excellent practice for maintaining soil health and preventing pest buildup.",
   "markdown": "**Crop Rotation Benefits**\n\n🌱 **Soil Health:** Improves soil structure and fertility\n🐛 **Pest Control:** Breaks pest and disease cycles\n💧 **Nutrient Management:** Different crops use different nutrients\n🌿 **Weed Suppression:** Reduces weed pressure\n\n💡 **Best Practices:**\n- Rotate between different plant families\n- Include legumes to fix nitrogen\n- Plan 3-4 year rotation cycles"
+}
+''';
+
+  /// PDF Preview Example
+  static const String pdfPreviewExample = '''
+{
+  "componentType": "pdfPreviewCard",
+  "componentData": {
+    "title": "Organic Farming Guidelines 2024",
+    "description": "Comprehensive guide for organic farming practices and certification requirements",
+    "pdfUrl": "https://example.com/organic-farming-guidelines-2024.pdf",
+    "voiceOverview": "This document provides detailed guidelines for organic farming practices including soil management, pest control, and certification requirements. It covers sustainable agriculture methods and compliance standards for organic certification.",
+    "fileSize": "2.4 MB",
+    "pages": "45",
+    "category": "Guidelines"
+  },
+  "text": "Here's the latest organic farming guidelines document with voice overview.",
+  "markdown": "**Organic Farming Guidelines 2024**\n\n📄 **Document:** 45 pages, 2.4 MB\n🎤 **Voice Overview:** Available\n📋 **Category:** Guidelines\n\n*Click to view the full PDF with voice narration*"
 }
 ''';
 }

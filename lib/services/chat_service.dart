@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/chat_message.dart';
 import 'secrets.dart';
+import 'location_service.dart';
 
 class ChatService {
   ChatService._internal();
@@ -18,18 +19,35 @@ class ChatService {
   late final ChatSession _chatSession;
   bool _isInitialized = false;
 
+  // Location service
+  final LocationService _locationService = LocationService();
+
   void initializeGemini() {
     if (_isInitialized) return;
 
-    _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: Secrets.geminiApiKey,
-    );
-    _chatSession = _model.startChat();
-    _isInitialized = true;
+    try {
+      _model = GenerativeModel(
+        model: 'gemini-2.5-flash',
+        apiKey: Secrets.geminiApiKey,
+      );
+      _chatSession = _model.startChat();
+      _isInitialized = true;
+      print('Gemini initialized successfully');
+    } catch (e) {
+      print('Failed to initialize Gemini: $e');
+      _isInitialized = false;
+    }
   }
 
-  Future<void> sendMessage(String text) async {
+  Future<void> sendMessage(
+    String text, {
+    MediaAttachment? mediaAttachment,
+  }) async {
+    // Initialize Gemini if not already initialized
+    if (!_isInitialized) {
+      initializeGemini();
+    }
+
     if (!_isInitialized) {
       // Fallback response if Gemini is not initialized
       final ChatMessage fallback = ChatMessage(
@@ -41,10 +59,26 @@ class ChatService {
       return;
     }
 
+    // Get current location
+    Map<String, dynamic>? locationData;
+    try {
+      await _locationService.getCurrentLocation();
+      locationData = _locationService.getLocationData();
+      if (locationData != null) {
+        print(
+          '📍 Location data: ${locationData['latitude']}, ${locationData['longitude']}',
+        );
+      }
+    } catch (e) {
+      print('⚠️ Failed to get location: $e');
+    }
+
     final ChatMessage userMessage = ChatMessage(
       id: _generateId(),
       text: text,
       sender: ChatSender.user,
+      mediaAttachment: mediaAttachment,
+      locationData: locationData, // Include location data
     );
 
     messages.value = List<ChatMessage>.from(messages.value)..add(userMessage);
@@ -59,6 +93,36 @@ class ChatService {
       );
       messages.value = List<ChatMessage>.from(messages.value)
         ..add(typingMessage);
+
+      // Prepare prompt based on media type and location
+      String prompt = text;
+      String locationContext = '';
+
+      if (locationData != null) {
+        locationContext =
+            '\n\nUser Location: ${locationData['latitude']}, ${locationData['longitude']}';
+        if (locationData['address'] != null) {
+          locationContext += '\nAddress: ${locationData['address']}';
+        }
+      }
+
+      if (mediaAttachment != null) {
+        switch (mediaAttachment.type) {
+          case MediaType.image:
+            prompt =
+                'User sent an image with the message: "$text". Please analyze the image and provide agricultural advice.$locationContext';
+            break;
+          case MediaType.voice:
+            prompt =
+                'User sent a voice message with the text: "$text". Please provide agricultural advice based on their voice message.$locationContext';
+            break;
+          case MediaType.none:
+            prompt = '$text$locationContext';
+            break;
+        }
+      } else {
+        prompt = '$text$locationContext';
+      }
 
       // Get response from Gemini
       final response = await _chatSession.sendMessage(
@@ -83,8 +147,9 @@ class ChatService {
           '- interactiveChecklistCard: for task lists\n'
           '- policyCard: for government schemes\n'
           '- contactAdvisorCard: for expert contact\n'
+          '- pdfPreviewCard: for documents with voice overview\n'
           '- none: for general responses\n\n'
-          'Question: $text',
+          'Question: $prompt',
         ),
       );
       final responseText =

@@ -45,5 +45,31 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Camera permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to capture images for agricultural analysis</string>
+	
+	<!-- Microphone permission -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to record voice messages</string>
+	
+	<!-- Photo library permission -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to select images for agricultural advice.</string>
+	
+	<!-- Photo library add permission -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save photos to your photo library.</string>
+	
+	<!-- Location permission -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to provide location-specific agricultural advice</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to provide location-specific agricultural advice</string>
+	
+	<!-- Microphone permission -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to record voice messages</string>
 </dict>
 </plist>

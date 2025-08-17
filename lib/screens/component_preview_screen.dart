@@ -9,6 +9,7 @@ import '../widgets/components/time_series_chart_card.dart';
 import '../widgets/components/comparison_table_card.dart';
 import '../widgets/components/step_by_step_guide_card.dart';
 import '../widgets/components/interactive_checklist_card.dart';
+import '../widgets/components/pdf_preview_card.dart';
 
 class ComponentPreviewScreen extends StatefulWidget {
   const ComponentPreviewScreen({super.key});
@@ -49,7 +50,8 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
       'pestRisk': 'Low Risk',
       'marketTrend': 'Stable',
       'nextAction': 'Top Dressing (in ~3 days)',
-      'recommendations': 'Apply nitrogen fertilizer and ensure proper irrigation.',
+      'recommendations':
+          'Apply nitrogen fertilizer and ensure proper irrigation.',
     },
     // Visual Diagnosis Card
     {
@@ -63,20 +65,17 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
       'scheme': 'PM-KISAN',
       'ministry': 'Ministry of Agriculture',
       'benefits': ['₹6,000 per year', 'Direct bank transfer', 'No middlemen'],
-      'eligibility': ['Small and marginal farmers', 'Landholding up to 2 hectares'],
+      'eligibility': [
+        'Small and marginal farmers',
+        'Landholding up to 2 hectares',
+      ],
       'documents': ['Aadhaar card', 'Land records', 'Bank account details'],
       'amount': '6,000',
     },
     // Contact Advisor Card
-    {
-      'expertName': 'Dr. Rajesh Kumar',
-      'contact': '+91 98765 43210',
-    },
+    {'expertName': 'Dr. Rajesh Kumar', 'contact': '+91 98765 43210'},
     // Time Series Chart Card
-    {
-      'title': 'Market Price Trends',
-      'metric': 'Soybean prices over 30 days',
-    },
+    {'title': 'Market Price Trends', 'metric': 'Soybean prices over 30 days'},
     // Comparison Table Card
     {
       'title': 'Seed Varieties Comparison',
@@ -85,6 +84,8 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
     // Step-by-Step Guide Card
     {
       'title': 'Soil Sampling Process',
+      'description':
+          'Proper soil sampling techniques for accurate laboratory analysis',
       'steps': [
         'Choose representative locations in your field',
         'Use a soil auger to collect samples from 0-15 cm depth',
@@ -92,6 +93,10 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
         'Send to laboratory for analysis',
         'Follow recommendations based on results',
       ],
+      'estimatedTime': '2-3 hours',
+      'materials': ['Soil auger', 'Clean containers', 'Labels', 'GPS device'],
+      'tips':
+          'Avoid sampling near field edges or areas with different soil types',
     },
     // Interactive Checklist Card
     {
@@ -103,6 +108,19 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
         'Apply organic manure',
         'Prepare seedbeds if needed',
       ],
+    },
+    // PDF Preview Card
+    {
+      'title': 'Organic Farming Guidelines 2024',
+      'description':
+          'Comprehensive guide for organic farming practices and certification requirements',
+      'pdfUrl':
+          'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      'voiceOverview':
+          'This document provides detailed guidelines for organic farming practices including soil management, pest control, and certification requirements.',
+      'fileSize': '2.4 MB',
+      'pages': '45',
+      'category': 'Guidelines',
     },
   ];
 
@@ -117,6 +135,7 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
     'Comparison Table Card',
     'Step-by-Step Guide Card',
     'Interactive Checklist Card',
+    'PDF Preview Card',
   ];
 
   Widget _buildComponent(int index) {
@@ -141,6 +160,8 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
         return StepByStepGuideCard(data: _dummyData[8]);
       case 9:
         return InteractiveChecklistCard(data: _dummyData[9]);
+      case 10:
+        return PdfPreviewCard(data: _dummyData[10]);
       default:
         return const Center(child: Text('Component not found'));
     }
@@ -150,7 +171,7 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Component Preview'),
@@ -167,9 +188,7 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
             ),
         ],
       ),
-      body: isSmallScreen 
-          ? _buildMobileLayout() 
-          : _buildDesktopLayout(),
+      body: isSmallScreen ? _buildMobileLayout() : _buildDesktopLayout(),
     );
   }
 
@@ -197,10 +216,7 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Preview with dummy data',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -209,9 +225,7 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Center(
-                child: _buildComponent(_selectedIndex),
-              ),
+              child: Center(child: _buildComponent(_selectedIndex)),
             ),
           ),
         ],
@@ -250,18 +264,18 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
                       selectedTileColor: Colors.green.shade100,
                       leading: Icon(
                         _getComponentIcon(index),
-                        color: _selectedIndex == index 
-                            ? Colors.green.shade600 
+                        color: _selectedIndex == index
+                            ? Colors.green.shade600
                             : Colors.grey.shade600,
                       ),
                       title: Text(
                         _componentNames[index],
                         style: TextStyle(
-                          fontWeight: _selectedIndex == index 
-                              ? FontWeight.w600 
+                          fontWeight: _selectedIndex == index
+                              ? FontWeight.w600
                               : FontWeight.normal,
-                          color: _selectedIndex == index 
-                              ? Colors.green.shade800 
+                          color: _selectedIndex == index
+                              ? Colors.green.shade800
                               : Colors.grey.shade800,
                         ),
                       ),
@@ -369,18 +383,18 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
                     selectedTileColor: Colors.green.shade100,
                     leading: Icon(
                       _getComponentIcon(index),
-                      color: _selectedIndex == index 
-                          ? Colors.green.shade600 
+                      color: _selectedIndex == index
+                          ? Colors.green.shade600
                           : Colors.grey.shade600,
                     ),
                     title: Text(
                       _componentNames[index],
                       style: TextStyle(
-                        fontWeight: _selectedIndex == index 
-                            ? FontWeight.w600 
+                        fontWeight: _selectedIndex == index
+                            ? FontWeight.w600
                             : FontWeight.normal,
-                        color: _selectedIndex == index 
-                            ? Colors.green.shade800 
+                        color: _selectedIndex == index
+                            ? Colors.green.shade800
                             : Colors.grey.shade800,
                       ),
                     ),
@@ -422,6 +436,8 @@ class _ComponentPreviewScreenState extends State<ComponentPreviewScreen> {
         return Icons.format_list_numbered;
       case 9:
         return Icons.checklist;
+      case 10:
+        return Icons.picture_as_pdf;
       default:
         return Icons.widgets;
     }

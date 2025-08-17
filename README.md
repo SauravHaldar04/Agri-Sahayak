@@ -294,6 +294,7 @@ Gemini should return responses in the following JSON format:
   "componentType": "stepByStepGuideCard",
   "componentData": {
     "title": "Soil Sampling Process",
+    "description": "Proper soil sampling techniques for accurate laboratory analysis",
     "steps": [
       "Choose representative locations in your field",
       "Use a soil auger to collect samples from 0-15 cm depth",
@@ -312,6 +313,7 @@ Gemini should return responses in the following JSON format:
 
 **Field Descriptions**:
 - `title`: Guide title
+- `description`: Brief description of the process (optional)
 - `steps`: Array of sequential steps
 - `estimatedTime`: Time required to complete
 - `materials`: Required materials or tools
@@ -351,6 +353,37 @@ Gemini should return responses in the following JSON format:
 - `completedTasks`: Indices of completed tasks
 - `estimatedCompletion`: Time to complete remaining tasks
 - `priority`: Priority level (Low, Medium, High, Critical)
+
+### 11. PDF Preview Card (`pdfPreviewCard`)
+
+**Use Case**: Document sharing, guidelines, reports with voice overview
+
+**Required Fields**:
+```json
+{
+  "componentType": "pdfPreviewCard",
+  "componentData": {
+    "title": "Organic Farming Guidelines 2024",
+    "description": "Comprehensive guide for organic farming practices and certification requirements",
+    "pdfUrl": "https://example.com/organic-farming-guidelines-2024.pdf",
+    "voiceOverview": "This document provides detailed guidelines for organic farming practices including soil management, pest control, and certification requirements. It covers sustainable agriculture methods and compliance standards for organic certification.",
+    "fileSize": "2.4 MB",
+    "pages": "45",
+    "category": "Guidelines"
+  },
+  "text": "Here's the latest organic farming guidelines document with voice overview.",
+  "markdown": "**Organic Farming Guidelines 2024**\n\n📄 **Document:** 45 pages, 2.4 MB\n🎤 **Voice Overview:** Available\n📋 **Category:** Guidelines\n\n*Click to view the full PDF with voice narration*"
+}
+```
+
+**Field Descriptions**:
+- `title`: Document title
+- `description`: Brief description of the document
+- `pdfUrl`: URL to the PDF file
+- `voiceOverview`: Text that will be read aloud as voice overview (optional)
+- `fileSize`: Size of the PDF file
+- `pages`: Number of pages in the document
+- `category`: Document category or type
 
 ## Fallback Response
 
@@ -398,6 +431,7 @@ Available component types:
 - interactiveChecklistCard: for task lists
 - policyCard: for government schemes
 - contactAdvisorCard: for expert contact
+- pdfPreviewCard: for documents with voice overview
 - none: for general responses
 
 Question: [USER_QUESTION]

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:markdown_widget/widget/markdown.dart';
+import 'dart:io';
 
 import '../models/chat_message.dart';
+import 'audio_player_widget.dart';
 import 'components/chart_component.dart';
 import 'components/diagnosis_card.dart';
 import 'components/policy_card.dart';
@@ -16,6 +18,7 @@ import 'components/time_series_chart_card.dart';
 import 'components/comparison_table_card.dart';
 import 'components/step_by_step_guide_card.dart';
 import 'components/interactive_checklist_card.dart';
+import 'components/pdf_preview_card.dart';
 
 class ChatBubble extends StatefulWidget {
   const ChatBubble({super.key, required this.message});
@@ -67,6 +70,198 @@ class _ChatBubbleState extends State<ChatBubble> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Build media attachment widget
+  Widget _buildMediaAttachment() {
+    if (widget.message.mediaAttachment == null) return const SizedBox.shrink();
+
+    final media = widget.message.mediaAttachment!;
+
+    switch (media.type) {
+      case MediaType.image:
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              File(media.filePath),
+              width: 200,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 200,
+                  height: 200,
+                  color: Colors.grey.shade300,
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.grey.shade600,
+                    size: 48,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+      case MediaType.voice:
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: AudioPlayerWidget(
+            audioPath: media.filePath,
+            width: 250,
+            height: 80,
+          ),
+        );
+
+      case MediaType.none:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildComponent() {
+    switch (widget.message.componentType) {
+      case ChatComponentType.chart:
+        return ChartComponent(
+          data: widget.message.componentData ?? <String, dynamic>{},
+        );
+      case ChatComponentType.diagnosisCard:
+        return DiagnosisCard(
+          data: widget.message.componentData ?? <String, dynamic>{},
+        );
+      case ChatComponentType.policyCard:
+        return PolicyCard(
+          data: widget.message.componentData ?? <String, dynamic>{},
+        );
+      case ChatComponentType.communityPrompt:
+        return CommunityPrompt(
+          data: widget.message.componentData ?? <String, dynamic>{},
+        );
+      case ChatComponentType.weatherCard:
+        return WeatherCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.cropReportCard:
+        return CropReportCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.timeSeriesChartCard:
+        return TimeSeriesChartCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.comparisonTableCard:
+        return ComparisonTableCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.soilAnalysisCard:
+        return SoilAnalysisCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.visualDiagnosisCard:
+        return VisualDiagnosisCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.stepByStepGuideCard:
+        return StepByStepGuideCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.interactiveChecklistCard:
+        return InteractiveChecklistCard(
+          data: widget.message.componentData ?? {},
+        );
+      case ChatComponentType.contactAdvisorCard:
+        return ContactAdvisorCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.pdfPreviewCard:
+        return PdfPreviewCard(data: widget.message.componentData ?? {});
+      case ChatComponentType.none:
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildMessageContent() {
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Main message text
+        if (widget.message.markdown != null)
+          MarkdownWidget(
+            data: widget.message.markdown!,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+          )
+        else
+          Text(
+            widget.message.text,
+            style: TextStyle(
+              fontSize: 16,
+              color: widget.message.sender == ChatSender.user
+                  ? Colors.white
+                  : Colors.black87,
+            ),
+          ),
+
+        // Location information
+        if (widget.message.locationData != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, size: 16, color: Colors.blue.shade600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Location',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      Text(
+                        '${widget.message.locationData!['latitude']?.toStringAsFixed(6)}, ${widget.message.locationData!['longitude']?.toStringAsFixed(6)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade600,
+                        ),
+                      ),
+                      if (widget.message.locationData!['address'] != null)
+                        Text(
+                          widget.message.locationData!['address'],
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.blue.shade500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // Media attachment
+        if (widget.message.mediaAttachment != null &&
+            widget.message.mediaAttachment!.type != MediaType.none)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: _buildMediaAttachment(),
+          ),
+      ],
+    );
+
+    // Add component if present
+    if (widget.message.componentType != ChatComponentType.none) {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [content, const SizedBox(height: 12), _buildComponent()],
+      );
+    }
+
+    return content;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isUser = widget.message.sender == ChatSender.user;
@@ -100,182 +295,7 @@ class _ChatBubbleState extends State<ChatBubble> with TickerProviderStateMixin {
         ],
       );
     } else {
-      switch (widget.message.componentType) {
-        case ChatComponentType.none:
-          // Show markdown if available for agent messages, otherwise show plain text
-          if (!isUser && widget.message.markdown != null) {
-            try {
-              child = SizedBox(
-                width: MediaQuery.of(context).size.width * 0.7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MarkdownWidget(
-                      data: widget.message.markdown!,
-                      shrinkWrap: true,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: widget.message.markdown!),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Text copied to clipboard'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: Icon(
-                            Icons.copy,
-                            size: 16,
-                            color: Colors.green.shade600,
-                          ),
-                          tooltip: 'Copy text',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            } catch (e) {
-              // Fallback to plain text if markdown fails
-              child = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SelectableText(
-                    widget.message.text,
-                    style: TextStyle(
-                      color: Colors.green.shade700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Clipboard.setData(
-                            ClipboardData(text: widget.message.text),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Text copied to clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.copy,
-                          size: 16,
-                          color: Colors.green.shade600,
-                        ),
-                        tooltip: 'Copy text',
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            }
-          } else {
-            child = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SelectableText(
-                  widget.message.text,
-                  style: TextStyle(
-                    color: isUser
-                        ? Colors.green.shade800
-                        : Colors.green.shade700,
-                    fontSize: 16,
-                  ),
-                ),
-                if (!isUser) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Clipboard.setData(
-                            ClipboardData(text: widget.message.text),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Text copied to clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.copy,
-                          size: 16,
-                          color: Colors.green.shade600,
-                        ),
-                        tooltip: 'Copy text',
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            );
-          }
-          break;
-        case ChatComponentType.chart:
-          child = ChartComponent(
-            data: widget.message.componentData ?? <String, dynamic>{},
-          );
-          break;
-        case ChatComponentType.diagnosisCard:
-          child = DiagnosisCard(
-            data: widget.message.componentData ?? <String, dynamic>{},
-          );
-          break;
-        case ChatComponentType.policyCard:
-          child = PolicyCard(
-            data: widget.message.componentData ?? <String, dynamic>{},
-          );
-          break;
-        case ChatComponentType.communityPrompt:
-          child = CommunityPrompt(
-            data: widget.message.componentData ?? <String, dynamic>{},
-          );
-          break;
-        case ChatComponentType.weatherCard:
-          child = WeatherCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.cropReportCard:
-          child = CropReportCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.timeSeriesChartCard:
-          child = TimeSeriesChartCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.comparisonTableCard:
-          child = ComparisonTableCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.soilAnalysisCard:
-          child = SoilAnalysisCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.visualDiagnosisCard:
-          child = VisualDiagnosisCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.stepByStepGuideCard:
-          child = StepByStepGuideCard(data: widget.message.componentData ?? {});
-          break;
-        case ChatComponentType.interactiveChecklistCard:
-          child = InteractiveChecklistCard(
-            data: widget.message.componentData ?? {},
-          );
-          break;
-        case ChatComponentType.contactAdvisorCard:
-          child = ContactAdvisorCard(data: widget.message.componentData ?? {});
-          break;
-      }
+      child = _buildMessageContent();
     }
 
     return AnimatedBuilder(

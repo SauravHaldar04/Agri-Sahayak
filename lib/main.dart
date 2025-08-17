@@ -1,8 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/supabase_service.dart';
+import 'providers/auth_provider.dart';
+import 'widgets/auth_wrapper.dart';
+import 'services/chat_service.dart';
+import 'services/location_service.dart';
 
-import 'screens/auth/auth_wrapper.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  // Initialize Supabase
+  await SupabaseService.initialize();
+
+  // Initialize Chat Service
+  ChatService.instance.initializeGemini();
+
+  // Initialize Location Service (request permissions)
+  try {
+    await LocationService().getCurrentLocation();
+  } catch (e) {
+    print('Location initialization failed: $e');
+    // Continue without location - it's not critical for app startup
+  }
+
   runApp(const MyApp());
 }
 
@@ -11,51 +31,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Agri-Sahayak',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32), // Deep green
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: true,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Color(0xFF1B5E20),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      child: MaterialApp(
+        title: 'Agri Sahayak',
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.light,
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF4CAF50)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-          ),
-          filled: true,
-          fillColor: Colors.green.shade50,
-        ),
+        home: const AuthWrapper(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const AuthWrapper(),
     );
   }
 }
