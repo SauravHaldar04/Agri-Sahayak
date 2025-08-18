@@ -37,9 +37,13 @@ dependencies:
   google_generative_ai: ^0.2.3
   markdown_widget: ^2.3.2+8
   http: ^1.1.0
+  flutter_sound: ^9.2.13
+  permission_handler: ^11.3.0
+  
   
   # Camera and gallery functionality
   image_picker: ^1.0.7
+ # Updated to a more recent version for better compatibility
   
   # Voice recording functionality
   
@@ -84,15 +88,12 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/pdf/
+    - assets/pdf/agriculture.pdf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

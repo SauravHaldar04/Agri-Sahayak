@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'community_screen.dart';
 import 'settings_screen.dart';
+import '../../services/routing_service.dart';
 
 class FarmerHomeScreen extends StatefulWidget {
   const FarmerHomeScreen({super.key});
@@ -68,6 +69,7 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen>
           children: _tabs,
         ),
       ),
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,

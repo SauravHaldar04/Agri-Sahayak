@@ -32,9 +32,13 @@ class ChatService {
       );
       _chatSession = _model.startChat();
       _isInitialized = true;
-      print('Gemini initialized successfully');
+      if (kDebugMode) {
+        print('Gemini initialized successfully');
+      }
     } catch (e) {
-      print('Failed to initialize Gemini: $e');
+      if (kDebugMode) {
+        print('Failed to initialize Gemini: $e');
+      }
       _isInitialized = false;
     }
   }
@@ -64,13 +68,15 @@ class ChatService {
     try {
       await _locationService.getCurrentLocation();
       locationData = _locationService.getLocationData();
-      if (locationData != null) {
+      if (locationData != null && kDebugMode) {
         print(
           '📍 Location data: ${locationData['latitude']}, ${locationData['longitude']}',
         );
       }
     } catch (e) {
-      print('⚠️ Failed to get location: $e');
+      if (kDebugMode) {
+        print('⚠️ Failed to get location: $e');
+      }
     }
 
     final ChatMessage userMessage = ChatMessage(
@@ -124,34 +130,66 @@ class ChatService {
         prompt = '$text$locationContext';
       }
 
+      // Check if this is a PDF-related query
+      bool isPdfQuery = _isPdfRelatedQuery(text);
+
+      String finalPrompt;
+      if (isPdfQuery) {
+        finalPrompt = '''
+        The user is asking about: $text
+        
+        Analyze this agricultural question and respond with a JSON object that includes a PDF component. Use this format:
+        
+        {
+          "componentType": "pdfPreviewCard",
+          "componentData": {
+            "pdfAsset": "assets/pdf/agriculture.pdf",
+            "title": "Complete Agriculture Guide",
+            "description": "Comprehensive agricultural reference guide covering all aspects of farming, crop management, and best practices.",
+            "voiceOverview": "This comprehensive agriculture guide covers essential farming practices including crop management, pest control, soil health, irrigation techniques, and sustainable farming methods. It serves as a complete reference for modern agricultural practices.",
+            "category": "Reference Guide",
+            "fileSize": "3.2 MB",
+            "pages": "120"
+          },
+          "text": "I've found relevant information for your question. Please check the comprehensive agriculture guide below which covers this topic in detail.",
+          "markdown": "I've found relevant information for your question. Please check the **Complete Agriculture Guide** below which covers this topic in detail."
+        }
+        
+        Question: $prompt
+        ''';
+      } else {
+        finalPrompt = '''
+        You are an agricultural expert. Analyze the following question and respond with a JSON object that specifies the component type and required data. Use this format:
+        
+        {
+          "componentType": "component_name",
+          "componentData": {
+            // specific data for the component
+          },
+          "text": "Human readable response text",
+          "markdown": "Markdown formatted response"
+        }
+        
+        Available component types:
+        - weatherCard: for weather queries
+        - cropReportCard: for crop status/reports
+        - timeSeriesChartCard: for trend data
+        - comparisonTableCard: for comparisons
+        - soilAnalysisCard: for soil health
+        - visualDiagnosisCard: for plant problems
+        - stepByStepGuideCard: for processes
+        - interactiveChecklistCard: for task lists
+        - policyCard: for government schemes
+        - contactAdvisorCard: for expert contact
+        - pdfPreviewCard: for documents with voice overview
+        - none: for general responses
+        
+        Question: $prompt
+        ''';
+      }
+
       // Get response from Gemini
-      final response = await _chatSession.sendMessage(
-        Content.text(
-          'You are an agricultural expert. Analyze the following question and respond with a JSON object that specifies the component type and required data. Use this format:\n\n'
-          '{\n'
-          '  "componentType": "component_name",\n'
-          '  "componentData": {\n'
-          '    // specific data for the component\n'
-          '  },\n'
-          '  "text": "Human readable response text",\n'
-          '  "markdown": "Markdown formatted response"\n'
-          '}\n\n'
-          'Available component types:\n'
-          '- weatherCard: for weather queries\n'
-          '- cropReportCard: for crop status/reports\n'
-          '- timeSeriesChartCard: for trend data\n'
-          '- comparisonTableCard: for comparisons\n'
-          '- soilAnalysisCard: for soil health\n'
-          '- visualDiagnosisCard: for plant problems\n'
-          '- stepByStepGuideCard: for processes\n'
-          '- interactiveChecklistCard: for task lists\n'
-          '- policyCard: for government schemes\n'
-          '- contactAdvisorCard: for expert contact\n'
-          '- pdfPreviewCard: for documents with voice overview\n'
-          '- none: for general responses\n\n'
-          'Question: $prompt',
-        ),
-      );
+      final response = await _chatSession.sendMessage(Content.text(finalPrompt));
       final responseText =
           response.text ?? 'Sorry, I couldn\'t generate a response.';
 
@@ -166,18 +204,20 @@ class ChatService {
         final componentType = _getComponentTypeFromJson(jsonData);
 
         // Log the component type being generated
-        print('🎯 Gemini generated component type: ${componentType.name}');
-        print('📊 Component data: ${jsonData['componentData']}');
-        print('📝 Text field: ${jsonData['text']}');
-        print('📝 Markdown field: ${jsonData['markdown']}');
-        print('🔧 About to create ChatMessage with:');
-        print('  - id: ${_generateId()}');
-        print('  - text: ${jsonData['text'] ?? responseText}');
-        print('  - sender: ${ChatSender.agent.name}');
-        print('  - markdown: ${jsonData['markdown']}');
-        print('  - componentType: ${componentType.name}');
-        print('  - componentData: ${jsonData['componentData']}');
-        print('  - jsonResponse: ${jsonData}');
+        if (kDebugMode) {
+          print('🎯 Gemini generated component type: ${componentType.name}');
+          print('📊 Component data: ${jsonData['componentData']}');
+          print('📝 Text field: ${jsonData['text']}');
+          print('📝 Markdown field: ${jsonData['markdown']}');
+          print('🔧 About to create ChatMessage with:');
+          print('  - id: ${_generateId()}');
+          print('  - text: ${jsonData['text'] ?? responseText}');
+          print('  - sender: ${ChatSender.agent.name}');
+          print('  - markdown: ${jsonData['markdown']}');
+          print('  - componentType: ${componentType.name}');
+          print('  - componentData: ${jsonData['componentData']}');
+          print('  - jsonResponse: $jsonData');
+        }
 
         responseMessage = ChatMessage(
           id: _generateId(),
@@ -189,12 +229,16 @@ class ChatService {
           jsonResponse: jsonData,
         );
 
-        print('✅ ChatMessage created successfully');
+        if (kDebugMode) {
+          print('✅ ChatMessage created successfully');
+        }
       } catch (e, stackTrace) {
         // Fallback to default markdown response
-        print('⚠️ JSON parsing failed, falling back to markdown: $e');
-        print('📝 Full response text: $responseText');
-        print('🔍 Stack trace: $stackTrace');
+        if (kDebugMode) {
+          print('⚠️ JSON parsing failed, falling back to markdown: $e');
+          print('📝 Full response text: $responseText');
+          print('🔍 Stack trace: $stackTrace');
+        }
 
         responseMessage = ChatMessage(
           id: _generateId(),
@@ -222,39 +266,6 @@ class ChatService {
     }
   }
 
-  bool _shouldShowPriceChart(String userInput, String response) {
-    final lower = userInput.toLowerCase();
-    return lower.contains('price') ||
-        lower.contains('market') ||
-        lower.contains('cost') ||
-        lower.contains('trend');
-  }
-
-  bool _shouldShowPolicyCard(String userInput, String response) {
-    final lower = userInput.toLowerCase();
-    return lower.contains('policy') ||
-        lower.contains('scheme') ||
-        lower.contains('benefit') ||
-        lower.contains('subsidy');
-  }
-
-  bool _shouldShowDiagnosisCard(String userInput, String response) {
-    final lower = userInput.toLowerCase();
-    return lower.contains('diagnose') ||
-        lower.contains('disease') ||
-        lower.contains('problem') ||
-        lower.contains('sick') ||
-        lower.contains('pest');
-  }
-
-  bool _shouldShowCommunityPrompt(String userInput, String response) {
-    final lower = userInput.toLowerCase();
-    return lower.contains('help') ||
-        lower.contains('how to') ||
-        lower.contains('advice') ||
-        lower.contains('experience');
-  }
-
   void clear() {
     messages.value = <ChatMessage>[];
     if (_isInitialized) {
@@ -269,29 +280,39 @@ class ChatService {
 
   Map<String, dynamic> _parseGeminiResponse(String response) {
     try {
-      print('🔍 Attempting to parse response: ${response.length} characters');
-      print('🔍 Full response text: "$response"');
+      if (kDebugMode) {
+        print('🔍 Attempting to parse response: ${response.length} characters');
+        print('🔍 Full response text: "$response"');
+      }
 
       // Try to extract JSON from the response
       final jsonStart = response.indexOf('{');
       final jsonEnd = response.lastIndexOf('}');
 
-      print('🔍 JSON start: $jsonStart, JSON end: $jsonEnd');
+      if (kDebugMode) {
+        print('🔍 JSON start: $jsonStart, JSON end: $jsonEnd');
+      }
 
       if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
         final jsonString = response.substring(jsonStart, jsonEnd + 1);
-        print('🔍 Extracted JSON string: "$jsonString"');
-        print(
-          '🔍 Extracted JSON string length: ${jsonString.length} characters',
-        );
+        if (kDebugMode) {
+          print('🔍 Extracted JSON string: "$jsonString"');
+          print(
+            '🔍 Extracted JSON string length: ${jsonString.length} characters',
+          );
+        }
 
         final parsed = json.decode(jsonString) as Map<String, dynamic>;
-        print('✅ JSON parsed successfully');
-        print('✅ Parsed data: $parsed');
+        if (kDebugMode) {
+          print('✅ JSON parsed successfully');
+          print('✅ Parsed data: $parsed');
+        }
         return parsed;
       }
 
-      print('⚠️ No JSON brackets found in response');
+      if (kDebugMode) {
+        print('⚠️ No JSON brackets found in response');
+      }
       // If no JSON found, return default structure
       return {
         'componentType': 'none',
@@ -300,8 +321,10 @@ class ChatService {
         'componentData': null,
       };
     } catch (e, stackTrace) {
-      print('❌ JSON parsing error: $e');
-      print('🔍 Stack trace: $stackTrace');
+      if (kDebugMode) {
+        print('❌ JSON parsing error: $e');
+        print('🔍 Stack trace: $stackTrace');
+      }
       // Return default structure on parse error
       return {
         'componentType': 'none',
@@ -336,6 +359,8 @@ class ChatService {
         return ChatComponentType.policyCard;
       case 'contactadvisorcard':
         return ChatComponentType.contactAdvisorCard;
+      case 'pdfpreviewcard':
+        return ChatComponentType.pdfPreviewCard;
       case 'chart':
         return ChatComponentType.chart;
       case 'diagnosiscard':
@@ -345,5 +370,19 @@ class ChatService {
       default:
         return ChatComponentType.none;
     }
+  }
+
+  // Check if message is asking about a PDF or document
+  bool _isPdfRelatedQuery(String message) {
+    final lowerMessage = message.toLowerCase();
+    final pdfKeywords = [
+      'pdf', 'document', 'guide', 'manual', 'guideline', 'handbook', 
+      'brochure', 'report', 'policy', 'scheme details', 'application form',
+      'organic farming', 'crop rotation', 'pest management', 'soil health',
+      'fertilizer guide', 'irrigation manual', 'seed treatment', 'harvesting guide',
+      'farming guide', 'agriculture guide', 'help document', 'reference'
+    ];
+    
+    return pdfKeywords.any((keyword) => lowerMessage.contains(keyword));
   }
 }

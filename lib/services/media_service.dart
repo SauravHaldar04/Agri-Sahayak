@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:math' as math;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/chat_message.dart';
 
 class MediaService {
@@ -14,10 +15,19 @@ class MediaService {
   MediaService._internal();
 
   final ImagePicker _imagePicker = ImagePicker();
+  FlutterSoundRecorder? _audioRecorder;
 
   bool _isRecording = false;
   String? _currentRecordingPath;
   DateTime? _recordingStartTime;
+
+  // Initialize the audio recorder
+  Future<void> _initializeRecorder() async {
+    if (_audioRecorder == null) {
+      _audioRecorder = FlutterSoundRecorder();
+      await _audioRecorder!.openRecorder();
+    }
+  }
 
   // Pick image from camera
   Future<File?> pickImageFromCamera() async {
@@ -65,7 +75,7 @@ class MediaService {
     }
   }
 
-  // Start voice recording (creates realistic audio simulation)
+  // Start voice recording (using flutter_sound)
   Future<bool> startVoiceRecording() async {
     debugPrint('MediaService: startVoiceRecording called');
 
@@ -83,20 +93,39 @@ class MediaService {
         return false;
       }
 
+      // Request microphone permission
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        debugPrint('MediaService: Microphone permission denied');
+        return false;
+      }
+
+      // Initialize recorder if needed
+      await _initializeRecorder();
+
       debugPrint('MediaService: Starting recording...');
       final directory = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      _currentRecordingPath = '${directory.path}/voice_$timestamp.wav';
+      _currentRecordingPath = '${directory.path}/voice_$timestamp.aac';
       debugPrint('MediaService: Recording path: $_currentRecordingPath');
+
+      // Start recording
+      await _audioRecorder!.startRecorder(
+        toFile: _currentRecordingPath!,
+        codec: Codec.aacADTS,
+        bitRate: 128000,
+        sampleRate: 44100,
+      );
 
       // Record start time for duration calculation
       _recordingStartTime = DateTime.now();
-
       _isRecording = true;
+      
       debugPrint('MediaService: Voice recording started successfully');
       return true;
     } catch (e) {
       debugPrint('MediaService: Error starting voice recording: $e');
+      _isRecording = false;
       return false;
     }
   }
@@ -104,95 +133,48 @@ class MediaService {
   // Stop voice recording
   Future<File?> stopVoiceRecording() async {
     try {
-      if (!_isRecording || _currentRecordingPath == null) {
+      if (!_isRecording || _currentRecordingPath == null || _audioRecorder == null) {
+        debugPrint('MediaService: Not recording or no recorder available');
         return null;
       }
 
       debugPrint('MediaService: Stopping recording...');
 
+      // Stop the recording
+      final recordPath = await _audioRecorder!.stopRecorder();
       _isRecording = false;
 
       // Calculate recording duration
-      final duration = _recordingStartTime != null 
+      final duration = _recordingStartTime != null
           ? DateTime.now().difference(_recordingStartTime!)
-          : const Duration(seconds: 2);
-      
-      final durationSeconds = duration.inSeconds.clamp(1, 10); // Between 1-10 seconds
+          : const Duration(seconds: 1);
+
       _recordingStartTime = null;
 
-      // Create realistic voice-like audio file
-      final file = File(_currentRecordingPath!);
-      await _createVoiceLikeAudio(file, durationSeconds);
-
-      if (await file.exists()) {
-        debugPrint('MediaService: Voice recording saved to: $_currentRecordingPath (${durationSeconds}s)');
-        final result = file;
-        _currentRecordingPath = null;
-        return result;
+      if (recordPath != null) {
+        final file = File(recordPath);
+        if (await file.exists()) {
+          final fileSize = await file.length();
+          debugPrint(
+            'MediaService: Voice recording saved to: $recordPath (${duration.inSeconds}s, ${fileSize} bytes)',
+          );
+          _currentRecordingPath = null;
+          return file;
+        } else {
+          debugPrint('MediaService: Recording file does not exist: $recordPath');
+        }
+      } else {
+        debugPrint('MediaService: No recording path returned from recorder');
       }
 
-      debugPrint('MediaService: Recording file not found');
+      _currentRecordingPath = null;
       return null;
     } catch (e) {
-      debugPrint('Error stopping voice recording: $e');
+      debugPrint('MediaService: Error stopping voice recording: $e');
       _isRecording = false;
+      _currentRecordingPath = null;
       return null;
     }
-  }
-
-  // Create voice-like audio file
-  Future<void> _createVoiceLikeAudio(File file, int durationSeconds) async {
-    const sampleRate = 44100;
-    const numSamples = sampleRate * 2; // 2 seconds of audio data
-    
-    final audioData = <int>[];
-    
-    // Create voice-like audio with varying frequencies and amplitudes
-    for (int i = 0; i < numSamples; i++) {
-      // Simulate voice with multiple frequencies
-      final time = i / sampleRate;
-      final baseFreq = 150.0 + 50.0 * math.sin(time * 0.5); // Varying base frequency
-      final modFreq = 300.0 + 100.0 * math.sin(time * 0.3); // Modulation frequency
-      
-      // Combine frequencies to simulate voice
-      final sample1 = 0.4 * math.sin(2 * math.pi * baseFreq * time);
-      final sample2 = 0.2 * math.sin(2 * math.pi * modFreq * time);
-      final sample3 = 0.1 * math.sin(2 * math.pi * (baseFreq + modFreq) * time);
-      
-      final combinedSample = (sample1 + sample2 + sample3) * 0.8;
-      
-      // Add some noise to make it more realistic
-      final noise = (math.Random().nextDouble() - 0.5) * 0.1;
-      final finalSample = (combinedSample + noise) * 32767;
-      
-      // Convert to 16-bit little-endian
-      final sampleInt = finalSample.round().clamp(-32768, 32767);
-      audioData.add(sampleInt & 0xFF);
-      audioData.add((sampleInt >> 8) & 0xFF);
-    }
-
-    // Calculate file size
-    final dataSize = audioData.length;
-    final fileSize = 36 + dataSize; // Header (44 bytes) - 8 + data size
-
-    // Create WAV header
-    final wavHeader = <int>[
-      0x52, 0x49, 0x46, 0x46, // RIFF
-      fileSize & 0xFF, (fileSize >> 8) & 0xFF, (fileSize >> 16) & 0xFF, (fileSize >> 24) & 0xFF, // File size - 8
-      0x57, 0x41, 0x56, 0x45, // WAVE
-      0x66, 0x6D, 0x74, 0x20, // fmt
-      0x10, 0x00, 0x00, 0x00, // Subchunk1Size (16)
-      0x01, 0x00, // AudioFormat (PCM)
-      0x01, 0x00, // NumChannels (1)
-      sampleRate & 0xFF, (sampleRate >> 8) & 0xFF, (sampleRate >> 16) & 0xFF, (sampleRate >> 24) & 0xFF, // SampleRate
-      (sampleRate * 2) & 0xFF, ((sampleRate * 2) >> 8) & 0xFF, ((sampleRate * 2) >> 16) & 0xFF, ((sampleRate * 2) >> 24) & 0xFF, // ByteRate
-      0x02, 0x00, // BlockAlign
-      0x10, 0x00, // BitsPerSample (16)
-      0x64, 0x61, 0x74, 0x61, // data
-      dataSize & 0xFF, (dataSize >> 8) & 0xFF, (dataSize >> 16) & 0xFF, (dataSize >> 24) & 0xFF, // Subchunk2Size
-    ];
-
-    await file.writeAsBytes([...wavHeader, ...audioData]);
   }
 
   // Check if currently recording
@@ -225,6 +207,9 @@ class MediaService {
 
   // Dispose resources
   void dispose() {
-    // Nothing to dispose for now
+    if (_audioRecorder != null) {
+      _audioRecorder!.closeRecorder();
+      _audioRecorder = null;
+    }
   }
 }

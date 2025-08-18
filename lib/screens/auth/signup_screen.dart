@@ -35,11 +35,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final success = await authProvider.signUp(
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      userData: {
-        'full_name': _nameController.text.trim(),
-        'role': _selectedRole,
-        'created_at': DateTime.now().toIso8601String(),
-      },
+      fullName: _nameController.text.trim(),
+      role: _selectedRole,
+     
     );
 
     if (success && mounted) {
@@ -81,8 +79,8 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         child: SafeArea(
           child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
               child: Card(
                 elevation: 8,
                 shape: RoundedRectangleBorder(
@@ -92,24 +90,24 @@ class _SignupScreenState extends State<SignupScreen> {
                   padding: const EdgeInsets.all(32.0),
                   child: Form(
                     key: _formKey,
-          child: Column(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Title
-                    Text(
+                        Text(
                           'Join Agri Sahayak',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
+                            color: Colors.green.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
                           'Create your account to get started',
-                      textAlign: TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey.shade600,
@@ -284,9 +282,9 @@ class _SignupScreenState extends State<SignupScreen> {
                               onPressed: authProvider.isLoading
                                   ? null
                                   : _signUp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade600,
-                              foregroundColor: Colors.white,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade600,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
@@ -308,7 +306,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       ),
                                     )
                                   : const Text(
-                              'Create Account',
+                                      'Create Account',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -336,9 +334,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 style: TextStyle(
                                   color: Colors.green.shade600,
                                   fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
                           ],
                         ),
                       ],

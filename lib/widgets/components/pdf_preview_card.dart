@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class PdfPreviewCard extends StatelessWidget {
   const PdfPreviewCard({super.key, required this.data});
@@ -12,6 +15,7 @@ class PdfPreviewCard extends StatelessWidget {
     final title = data['title']?.toString() ?? 'PDF Document';
     final description = data['description']?.toString();
     final pdfUrl = data['pdfUrl']?.toString();
+    final pdfAsset = data['pdfAsset']?.toString(); // New field for local assets
     final voiceOverview = data['voiceOverview']?.toString();
     final fileSize = data['fileSize']?.toString();
     final pages = data['pages']?.toString();
@@ -23,7 +27,11 @@ class PdfPreviewCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: InkWell(
         onTap: () async {
-          if (pdfUrl != null) {
+          if (pdfAsset != null) {
+            // Handle local asset PDF
+            await _openLocalPdf(context, title, pdfAsset, voiceOverview);
+          } else if (pdfUrl != null) {
+            // Handle remote URL PDF
             final Uri url = Uri.parse(pdfUrl);
             if (await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -36,6 +44,15 @@ class PdfPreviewCard extends StatelessWidget {
                   ),
                 );
               }
+            }
+          } else {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No PDF source available'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           }
         },
@@ -54,7 +71,7 @@ class PdfPreviewCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      Icons.picture_as_pdf,
+                      pdfAsset != null ? Icons.folder : Icons.picture_as_pdf,
                       color: Colors.red.shade700,
                       size: 24,
                     ),
@@ -85,10 +102,31 @@ class PdfPreviewCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.open_in_new,
-                    color: Colors.grey.shade400,
-                    size: 20,
+                  Row(
+                    children: [
+                      if (pdfAsset != null)
+                        Icon(
+                          Icons.storage,
+                          color: Colors.green.shade600,
+                          size: 16,
+                        )
+                      else
+                        Icon(
+                          Icons.open_in_new,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                      const SizedBox(width: 4),
+                      Text(
+                        pdfAsset != null ? 'Local' : 'External',
+                        style: TextStyle(
+                          color: pdfAsset != null
+                              ? Colors.green.shade600
+                              : Colors.grey.shade400,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -178,19 +216,97 @@ class PdfPreviewCard extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _openLocalPdf(
+    BuildContext context,
+    String title,
+    String assetPath,
+    String? voiceOverview,
+  ) async {
+    try {
+      // Always use the correct asset path for the PDF in your project
+      String actualAssetPath = 'assets/pdf/agriculture.pdf';
+      
+      print('Loading PDF from asset: $actualAssetPath');
+      
+      // Check if the asset exists, if not show error
+      try {
+        final ByteData data = await rootBundle.load(actualAssetPath);
+        print('PDF asset loaded successfully, size: ${data.lengthInBytes} bytes');
+        
+        final bytes = data.buffer.asUint8List();
+        
+        final tempDir = await getTemporaryDirectory();
+        final fileName = 'agriculture.pdf';
+        final tempFile = File('${tempDir.path}/$fileName');
+        
+        await tempFile.writeAsBytes(bytes);
+        print('PDF written to temp file: ${tempFile.path}');
+        
+        // Verify temp file exists
+        if (await tempFile.exists()) {
+          final fileSize = await tempFile.length();
+          print('Temp file exists with size: $fileSize bytes');
+          
+          // Navigate to PDF viewer screen
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PdfViewerScreen(
+                  title: title,
+                  pdfPath: tempFile.path,
+                  voiceOverview: voiceOverview,
+                  isLocal: true,
+                ),
+              ),
+            );
+          }
+        } else {
+          throw Exception('Failed to create temporary PDF file');
+        }
+      } catch (assetError) {
+        print('Failed to load PDF asset: $assetError');
+        throw Exception('PDF file not found in assets. Please ensure agriculture.pdf exists in assets/pdf/ folder.');
+      }
+    } catch (e) {
+      print('Error opening local PDF: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PDF not available'),
+                Text('Error: ${e.toString()}', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(label: 'OK', onPressed: () {}),
+          ),
+        );
+      }
+    }
+  }
 }
 
 class PdfViewerScreen extends StatefulWidget {
   const PdfViewerScreen({
     super.key,
     required this.title,
-    required this.pdfUrl,
+    this.pdfUrl,
+    this.pdfPath,
     this.voiceOverview,
+    this.isLocal = false,
   });
 
   final String title;
-  final String pdfUrl;
+  final String? pdfUrl;
+  final String? pdfPath;
   final String? voiceOverview;
+  final bool isLocal;
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -247,18 +363,45 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Future<void> _openPdf() async {
-    final Uri url = Uri.parse(widget.pdfUrl);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open PDF'),
-            backgroundColor: Colors.red,
-          ),
-        );
+    if (widget.isLocal && widget.pdfPath != null) {
+      // For local PDFs, try to open with system PDF viewer
+      final file = File(widget.pdfPath!);
+      if (await file.exists()) {
+        try {
+          final uri = Uri.file(widget.pdfPath!);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            _showPdfUnavailableMessage();
+          }
+        } catch (e) {
+          print('Error opening local PDF: $e');
+          _showPdfUnavailableMessage();
+        }
+      } else {
+        _showPdfUnavailableMessage();
       }
+    } else if (widget.pdfUrl != null) {
+      // For remote PDFs, open URL
+      final Uri url = Uri.parse(widget.pdfUrl!);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        _showPdfUnavailableMessage();
+      }
+    } else {
+      _showPdfUnavailableMessage();
+    }
+  }
+
+  void _showPdfUnavailableMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open PDF. Please install a PDF reader app.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -288,7 +431,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           IconButton(
             icon: const Icon(Icons.open_in_new),
             onPressed: _openPdf,
-            tooltip: 'Open PDF in Browser',
+            tooltip: widget.isLocal
+                ? 'Open with PDF Reader'
+                : 'Open PDF in Browser',
           ),
         ],
       ),
@@ -349,13 +494,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.picture_as_pdf,
+                    widget.isLocal ? Icons.folder_open : Icons.picture_as_pdf,
                     size: 100,
                     color: Colors.red.shade300,
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'PDF Document',
+                    widget.isLocal ? 'Local PDF Document' : 'PDF Document',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.red.shade700,
                       fontWeight: FontWeight.bold,
@@ -363,15 +508,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Click the button above to open this PDF in your browser',
+                    widget.isLocal
+                        ? 'Click the button above to open this PDF with your default PDF reader'
+                        : 'Click the button above to open this PDF in your browser',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: _openPdf,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open PDF in Browser'),
+                    icon: Icon(
+                      widget.isLocal ? Icons.launch : Icons.open_in_new,
+                    ),
+                    label: Text(
+                      widget.isLocal
+                          ? 'Open with PDF Reader'
+                          : 'Open PDF in Browser',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade600,
                       foregroundColor: Colors.white,
