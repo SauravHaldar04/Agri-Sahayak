@@ -45,7 +45,13 @@ To democratize access to advanced agricultural technology through an intuitive m
 
 **📱 Flutter Mobile App in Action:**
 
-> **Note**: Demo screenshots and videos coming soon!
+**Watch AgroAI in Action:**
+
+[![AgroAI Demo Video](https://vumbnail.com/1111044281.jpg)](https://vimeo.com/1111044281)
+
+**🔗 [Watch Full Demo on Vimeo](https://vimeo.com/1111044281)**
+
+*See how our AI agents collaborate to provide comprehensive agricultural guidance through real-time crop disease detection, soil analysis, weather forecasting, and intelligent farming recommendations.*
 
 *Experience intelligent agricultural guidance through voice interaction, image-based disease detection, and dynamic AI-powered components.*
 
